@@ -1,0 +1,11 @@
+showcase
+example
+libsxui.a
+
+*.o
+
+.DS_Store
+Thumbs.db
+
+build/
+bin/

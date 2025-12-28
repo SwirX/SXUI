@@ -1,0 +1,3 @@
+[submodule "deps/list"]
+	path = deps/list
+	url = https://github.com/SwirX/SXList
