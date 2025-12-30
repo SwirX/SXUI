@@ -142,7 +142,7 @@ void on_focus_changed(void* element, int focused) {
     printf("Input focus: %s\n", focused ? "GAINED" : "LOST");
 }
 
-void on_exit(void* element) {
+void on_app_exit(void* element) {
     printf("Exiting application...\n");
     exit(0);
 }
@@ -232,7 +232,7 @@ int main(int argc, char* argv[]) {
     sxui_on_hover_leave(hover_btn, on_hover_leave);
     
     // Exit button
-    UIElement* exit_btn = sxui_button(sidebar, "Exit", on_exit);
+    UIElement* exit_btn = sxui_button(sidebar, "Exit", on_app_exit);
     sxui_set_size(exit_btn, 250, 50);
     
     // ========================================================================
