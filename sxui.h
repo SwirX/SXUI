@@ -1,3 +1,4 @@
+// sxui.h
 #ifndef SXUI_H
 #define SXUI_H
 
@@ -20,7 +21,7 @@ typedef enum {
     UI_LAYOUT_HORIZONTAL  = 1 << 4,
     UI_LAYOUT_GRID        = 1 << 5,
     UI_SCROLLABLE         = 1 << 6,
-    UI_LAYOUT_VERTICAL    = 1 << 7  // Explicit vertical for clarity
+    UI_LAYOUT_VERTICAL    = 1 << 7
 } UIFlags;
 
 typedef enum { 
@@ -32,7 +33,6 @@ typedef enum {
     UI_SLIDER 
 } UIType;
 
-// Forward declarations
 typedef struct UIElement UIElement;
 
 typedef struct UIConnection {
@@ -40,7 +40,6 @@ typedef struct UIConnection {
     list* parent_list;
 } UIConnection;
 
-// Callback types
 typedef void (*ClickCallback)(void* element);
 typedef void (*FocusCallback)(void* element, int is_focused);
 typedef void (*HoverCallback)(void* element, int is_hovered);
@@ -57,6 +56,7 @@ void sxui_poll_events(void);
 void sxui_render(void);
 int sxui_should_quit(void);
 void sxui_cleanup(void);
+int sxui_load_font(const char* path, int size);
 
 // ============================================================================
 // PUBLIC API - WIDGET CREATION
@@ -80,10 +80,9 @@ void sxui_set_draggable(UIElement* el, int draggable);
 void sxui_set_flags(UIElement* el, int flags);
 int sxui_get_flags(UIElement* el);
 
-// Text/Value getters and setters
 const char* sxui_get_text(UIElement* el);
 void sxui_set_text(UIElement* el, const char* text);
-float sxui_get_value(UIElement* el); // For sliders/checkboxes
+float sxui_get_value(UIElement* el);
 void sxui_set_value(UIElement* el, float value);
 
 // ============================================================================
@@ -110,4 +109,4 @@ UIConnection sxui_on_submit(UIElement* el, TextCallback callback);
 UIConnection sxui_on_value_changed(UIElement* el, ValueCallback callback);
 void sxui_disconnect(UIConnection conn);
 
-#endif // SXUI_H
+#endif

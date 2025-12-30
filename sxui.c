@@ -1,3 +1,4 @@
+// sxui.c
 #include "sxui.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,7 +42,6 @@ struct UIElement {
     int _is_hovered_prev;
     int _is_dragging;
     
-    // Event lists
     list* onMouseEnter;
     list* onMouseLeave;
 };
@@ -49,7 +49,6 @@ struct UIElement {
 typedef struct {
     UIElement el;
     char* text;
-    Uint32 textColor;
     list* onClick;
     int _pressed;
     Uint32 _lastClickTime;
@@ -58,15 +57,12 @@ typedef struct {
 typedef struct {
     UIElement el;
     char* text;
-    Uint32 textColor;
 } UILabel;
 
 typedef struct {
     UIElement el;
     char text[INPUT_MAX];
     char placeholder[INPUT_MAX];
-    Uint32 textColor;
-    Uint32 placeholderColor;
     size_t len;
     int scrollOffset;
     int cursorPosition;
@@ -80,7 +76,6 @@ typedef struct {
     UIElement el;
     int value;
     char* text;
-    Uint32 textColor;
     list* onValueChanged;
 } UICheckBox;
 
@@ -492,9 +487,16 @@ void read_input(UITextInput* input, SDL_Event* event) {
         }
     }
 
-    // Auto-scroll management
     int cw = input->el.w - 10;
-    int cx = _measure_text_len(input->text, input->cursorPosition);
+    int is_pass = (input->el.flags & UI_FLAG_PASSWORD);
+    
+    int cx;
+    if (is_pass) {
+        cx = input->cursorPosition * _measure_text("*");
+    } else {
+        cx = _measure_text_len(input->text, input->cursorPosition);
+    }
+    
     int rel_cx = cx - input->scrollOffset;
 
     if (rel_cx < 0) {
@@ -503,7 +505,13 @@ void read_input(UITextInput* input, SDL_Event* event) {
         input->scrollOffset = cx - cw;
     }
     
-    int total_w = _measure_text(input->text);
+    int total_w;
+    if (is_pass) {
+        total_w = input->len * _measure_text("*");
+    } else {
+        total_w = _measure_text(input->text);
+    }
+    
     if (total_w < cw) input->scrollOffset = 0;
     else if (input->scrollOffset > total_w - cw) input->scrollOffset = total_w - cw;
     if (input->scrollOffset < 0) input->scrollOffset = 0;
@@ -613,10 +621,6 @@ void sxui_init(const char* title, int w, int h, Uint32 seed) {
                                      SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_SHOWN);
     engine.renderer = SDL_CreateRenderer(engine.window, -1, 
                                         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    // engine.font = TTF_OpenFont("font.ttf", 16);
-    // if (!engine.font) {
-    //     printf("Warning: font.ttf not found. Text will not render.\n");
-    // }
 
     engine.default_font = TTF_OpenFont("fonts/Montserrat-Regular.ttf", 16);
     if (!engine.default_font) {
@@ -651,7 +655,7 @@ void sxui_cleanup(void) {
     if (engine.custom_font) {
         TTF_CloseFont(engine.custom_font);
         engine.custom_font = NULL;
-    }
+        }
     SDL_DestroyRenderer(engine.renderer);
     SDL_DestroyWindow(engine.window);
     TTF_Quit();
@@ -680,7 +684,6 @@ void sxui_poll_events(void) {
             UIElement* hit = _get_hit(engine.root, mx, my, 0, 0);
             int clicked_ui = (hit != NULL);
 
-            // if we click anything other than the focused input then we should infocus duh
             if (engine.focused && engine.focused != hit) {
                 if (engine.focused->type == UI_INPUT) {
                     trigger_focus((UITextInput*)engine.focused, 0);
@@ -707,6 +710,9 @@ void sxui_poll_events(void) {
                     cb->value = !cb->value;
                     trigger_value_changed(cb, (float)cb->value);
                 }
+                else if (hit->type == UI_SLIDER) {
+                    engine.focused = hit;
+                }
                 else if (hit->type == UI_INPUT) {
                     UITextInput* ti = (UITextInput*)hit;
                     if (engine.focused != (UIElement*)ti) {
@@ -730,7 +736,12 @@ void sxui_poll_events(void) {
         }
         
         if (e.type == SDL_MOUSEBUTTONUP) {
-            engine.dragging_el = NULL;
+            if (engine.dragging_el) {
+                engine.dragging_el = NULL;
+            }
+            if (engine.focused && engine.focused->type == UI_SLIDER) {
+                engine.focused = NULL;
+            }
         }
         
         if (e.type == SDL_MOUSEWHEEL) {
@@ -768,6 +779,9 @@ void sxui_poll_events(void) {
             UIElement* p = s->el.parent;
             while (p) {
                 wx += p->x;
+                if (p->type == UI_FRAME) {
+                    wx -= ((UIFrame*)p)->scroll_y;
+                }
                 p = p->parent;
             }
             float old_val = s->value;
@@ -800,7 +814,6 @@ UIElement* sxui_button(UIElement* p, const char* label, ClickCallback cb) {
     UIButton* b = calloc(1, sizeof(UIButton));
     init_base(&b->el, 0, 0, 0, 0, UI_BUTTON);
     b->text = strdup(label);
-    b->textColor = engine.theme.text_p;
     b->onClick = list_new();
     if (cb) bind_event(b->onClick, cb);
     _add_to_parent(p, (UIElement*)b);
@@ -811,7 +824,6 @@ UIElement* sxui_label(UIElement* p, const char* text) {
     UILabel* l = calloc(1, sizeof(UILabel));
     init_base(&l->el, 0, 0, 0, 0, UI_LABEL);
     l->text = strdup(text);
-    l->textColor = engine.theme.text_p;
     _add_to_parent(p, (UIElement*)l);
     return (UIElement*)l;
 }
@@ -821,8 +833,6 @@ UIElement* sxui_input(UIElement* p, const char* placeholder, int is_pass) {
     init_base(&i->el, 0, 0, 0, 0, UI_INPUT);
     if (is_pass) i->el.flags |= UI_FLAG_PASSWORD;
     strncpy(i->placeholder, placeholder, INPUT_MAX - 1);
-    i->textColor = engine.theme.text_p;
-    i->placeholderColor = engine.theme.text_s;
     i->onFocusChanged = list_new();
     i->onTextChanged = list_new();
     i->onSubmit = list_new();
@@ -834,7 +844,6 @@ UIElement* sxui_checkbox(UIElement* p, const char* label) {
     UICheckBox* c = calloc(1, sizeof(UICheckBox));
     init_base(&c->el, 0, 0, 0, 0, UI_CHECKBOX);
     c->text = strdup(label);
-    c->textColor = engine.theme.text_p;
     c->onValueChanged = list_new();
     _add_to_parent(p, (UIElement*)c);
     return (UIElement*)c;
@@ -1098,12 +1107,12 @@ void sx_render_recursive(list* l, int mx, int my, int px, int py) {
                     b->_pressed = 0;
                 }
                 _draw_rect(wx, wy, e->w, e->h, col);
-                _draw_text(b->text, wx + e->w/2, wy + e->h/2, b->textColor, 1, 0);
+                _draw_text(b->text, wx + e->w/2, wy + e->h/2, engine.theme.text_p, 1, 0);
                 break;
             }
             case UI_LABEL: {
                 UILabel* l = (UILabel*)e;
-                _draw_text(l->text, wx + e->w/2, wy + e->h/2, l->textColor, 1, 0);
+                _draw_text(l->text, wx + e->w/2, wy + e->h/2, engine.theme.text_p, 1, 0);
                 break;
             }
             case UI_INPUT: {
@@ -1114,20 +1123,27 @@ void sx_render_recursive(list* l, int mx, int my, int px, int py) {
                 SDL_Rect clip = {wx + 5, wy + 5, e->w - 10, e->h - 10};
                 SDL_RenderSetClipRect(engine.renderer, &clip);
 
+                int is_pass = (e->flags & UI_FLAG_PASSWORD);
+                
                 if (ti->cursorPosition != ti->selectionAnchor) {
                     int start = (ti->cursorPosition < ti->selectionAnchor) ? 
                                 ti->cursorPosition : ti->selectionAnchor;
                     int end = (ti->cursorPosition > ti->selectionAnchor) ? 
                               ti->cursorPosition : ti->selectionAnchor;
-                    int x1 = _measure_text_len(ti->text, start) - ti->scrollOffset;
-                    int x2 = _measure_text_len(ti->text, end) - ti->scrollOffset;
+                    int x1, x2;
+                    if (is_pass) {
+                        x1 = start * _measure_text("*") - ti->scrollOffset;
+                        x2 = end * _measure_text("*") - ti->scrollOffset;
+                    } else {
+                        x1 = _measure_text_len(ti->text, start) - ti->scrollOffset;
+                        x2 = _measure_text_len(ti->text, end) - ti->scrollOffset;
+                    }
                     _draw_rect(wx + 5 + x1, wy + 5, x2 - x1, e->h - 10, 0x0078D788);
                 }
 
                 if (ti->len == 0 && !is_focused) {
-                    _draw_text(ti->placeholder, wx + e->w/2, wy + e->h/2, ti->placeholderColor, 1, 0);
+                    _draw_text(ti->placeholder, wx + e->w/2, wy + e->h/2, engine.theme.text_s, 1, 0);
                 } else {
-                    int is_pass = (e->flags & UI_FLAG_PASSWORD);
                     if (!is_focused && _measure_text(ti->text) > e->w - 10) {
                         char temp[INPUT_MAX];
                         strcpy(temp, ti->text);
@@ -1135,16 +1151,21 @@ void sx_render_recursive(list* l, int mx, int my, int px, int py) {
                             temp[strlen(temp) - 1] = 0;
                         }
                         strcat(temp, "...");
-                        _draw_text(temp, wx + 5, wy + e->h/2, ti->textColor, 0, is_pass);
+                        _draw_text(temp, wx + 5, wy + e->h/2, engine.theme.text_p, 0, is_pass);
                     } else {
                         _draw_text(ti->text, wx + 5 - ti->scrollOffset, wy + e->h/2, 
-                                 ti->textColor, 0, is_pass);
+                                 engine.theme.text_p, 0, is_pass);
                     }
                 }
 
                 if (is_focused && (SDL_GetTicks() % 1000) < 500) {
-                    int cx = _measure_text_len(ti->text, ti->cursorPosition) - ti->scrollOffset;
-                    _draw_rect(wx + 5 + cx, wy + 5, 2, e->h - 10, ti->textColor);
+                    int cx;
+                    if (is_pass) {
+                        cx = ti->cursorPosition * _measure_text("*") - ti->scrollOffset;
+                    } else {
+                        cx = _measure_text_len(ti->text, ti->cursorPosition) - ti->scrollOffset;
+                    }
+                    _draw_rect(wx + 5 + cx, wy + 5, 2, e->h - 10, engine.theme.text_p);
                 }
 
                 SDL_RenderSetClipRect(engine.renderer, NULL);
@@ -1164,7 +1185,7 @@ void sx_render_recursive(list* l, int mx, int my, int px, int py) {
                     _draw_rect(wx + 4, wy + 4, boxSize - 8, boxSize - 8, engine.theme.primary);
                 }
                 
-                _draw_text(cb->text, wx + boxSize + 10, wy + boxSize/2, cb->textColor, 0, 0);
+                _draw_text(cb->text, wx + boxSize + 10, wy + boxSize/2, engine.theme.text_p, 0, 0);
                 break;
             }
             case UI_SLIDER: {
