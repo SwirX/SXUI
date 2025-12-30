@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
     // LEFT SIDEBAR - CONTROLS & SETTINGS
     // ========================================================================
     
-    UIElement* sidebar = sxui_frame(NULL, 10, 10, 280, 780, UI_SCROLLABLE);
+    UIElement* sidebar = sxui_frame(NULL, 10, 10, 280, 780, UI_SCROLLABLE | UI_FLAG_CLIP);
     sxui_frame_set_padding(sidebar, 15);
     sxui_frame_set_spacing(sidebar, 10);
     sxui_frame_set_default_child_size(sidebar, 250, 45);
@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
     // ========================================================================
     
     app.grid_frame = sxui_frame(NULL, 300, 10, 970, 400, 
-                                 UI_LAYOUT_GRID | UI_SCROLLABLE);
+                                 UI_LAYOUT_GRID | UI_SCROLLABLE | UI_FLAG_CLIP);
     sxui_frame_set_padding(app.grid_frame, 15);
     sxui_frame_set_spacing(app.grid_frame, 12);
     sxui_frame_set_default_child_size(app.grid_frame, 180, 100);
@@ -263,7 +263,7 @@ int main(int argc, char* argv[]) {
     // VERTICAL LIST DEMO
     // ========================================================================
     
-    app.list_frame = sxui_frame(NULL, 300, 420, 970, 370, UI_SCROLLABLE);
+    app.list_frame = sxui_frame(NULL, 300, 420, 970, 370, UI_SCROLLABLE|UI_FLAG_CLIP);
     sxui_frame_set_padding(app.list_frame, 15);
     sxui_frame_set_spacing(app.list_frame, 8);
     sxui_frame_set_default_child_size(app.list_frame, 400, 50);
