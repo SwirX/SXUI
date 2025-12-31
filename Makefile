@@ -1,9 +1,9 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -I. -Ideps/list
+CFLAGS = -Wall -Wextra -O2 -I. -Ideps/sxlist
 LDFLAGS = -lSDL2 -lSDL2_ttf -lm
 
 # Dependencies
-LIST_SRC = deps/list/dynamic_list.c
+LIST_SRC = deps/sxlist/dynamic_list.c
 
 # Library
 LIB_NAME = libsxui.a

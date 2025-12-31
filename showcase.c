@@ -296,7 +296,7 @@ int main(int argc, char* argv[]) {
     sxui_set_size(popup_title, 360, 40);
     
     sxui_label(app.popup, "Drag me by the frame!");
-    sxui_button(app.popup, "✓ Action Button", NULL);
+    sxui_button(app.popup, "Action Button", NULL);
     sxui_input(app.popup, "Popup Input...", 0);
     sxui_checkbox(app.popup, "Popup Checkbox");
     sxui_button(app.popup, "Close Popup", on_toggle_popup);
