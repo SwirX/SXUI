@@ -1,5 +1,7 @@
 # SXUI - Simple eXtensible UI Library
 
+[![Showcases](https://img.shields.io/badge/Showcases-Explore-blue?style=flat-square)](https://github.com/SwirX/SXUI-showcases)
+
 A high-level, plug-and-play UI library for C built on SDL2. SXUI provides a simplified interface for creating responsive desktop-class interfaces without managing low-level SDL state.
 
 ## Features
@@ -100,6 +102,18 @@ int main() {
 }
 
 ```
+
+## Learning & Examples
+
+If you are new to SXUI or C programming, I maintain a dedicated **[Showcases Repository](https://github.com/SwirX/SXUI-showcases)**. 
+
+Unlike standard documentation, the showcases are designed as **mini-courses**. Each example includes:
+* **Commented Source:** Step-by-step explanations of the implementation.
+* **Technical Deep-Dives:** READMEs that explain the underlying C concepts (Pointers, Memory Management, Bitwise Logic, etc.).
+
+**Available Showcases:**
+* **[Simple Login Form](https://github.com/SwirX/SXUI-showcases/tree/main/showcases/simple_login_form):** Learn about frames, inputs, and state management.
+* **More coming soon:** Sliders, Custom Styling, and Advanced Layouts.
 
 ## API Reference
 
