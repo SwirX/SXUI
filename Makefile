@@ -26,8 +26,8 @@ $(LIB_NAME): $(LIB_OBJ)
 	ar rcs $(LIB_NAME) $(LIB_OBJ)
 
 # Build Showcase binary
-showcase: showcase.c $(LIB_NAME)
-	$(CC) $(CFLAGS) showcase.c $(LIB_NAME) -o showcase $(LDFLAGS)
+showcase_bin: showcase.c $(LIB_NAME)
+	$(CC) $(CFLAGS) showcase.c $(LIB_NAME) -o showcase_bin $(LDFLAGS)
 
 # Build Example binary
 example: example.c $(LIB_NAME)
@@ -36,4 +36,4 @@ example: example.c $(LIB_NAME)
 lib: $(LIB_NAME)
 
 clean:
-	rm -f *.o $(LIB_NAME) showcase example
+	rm -f *.o $(LIB_NAME) showcase_bin example

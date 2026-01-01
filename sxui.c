@@ -34,6 +34,7 @@ typedef struct {
 } BoundCallback;
 
 struct UIElement {
+<<<<<<< HEAD
     int x, y, w, h;
     int target_w, target_h;
     UIType type;
@@ -52,6 +53,27 @@ struct UIElement {
     
     list* onMouseEnter;
     list* onMouseLeave;
+=======
+  int x, y, w, h;
+  int target_w, target_h;
+  UIType type;
+  int flags;
+  UIElement *parent;
+  list *children;
+  int _is_hovered;
+  int _is_hovered_prev;
+  int _is_dragging;
+  int z_index;
+  Uint32 creation_time;
+  float transparency;
+  Uint32 custom_color;
+  int has_custom_color;
+  UIEffects effects;
+
+  list *onMouseEnter;
+  list *onMouseLeave;
+  list *onMouseClick;
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
 };
 
 typedef struct {
@@ -125,6 +147,7 @@ typedef struct {
 } PageManager;
 
 typedef struct {
+<<<<<<< HEAD
     SDL_Window* window;
     SDL_Renderer* renderer;
     TTF_Font* font;
@@ -139,14 +162,50 @@ typedef struct {
     TTF_Font* custom_font;
     PageManager page_manager;
     FileDropCallback file_drop_callback;
+=======
+  SDL_Window *window;
+  SDL_Renderer *renderer;
+  TTF_Font *font;
+  list *root;
+  UITheme theme;
+  UIElement *focused;
+  UIElement *dragging_el;
+  int drag_off_x, drag_off_y;
+  UIElement *last_created;
+  int running;
+  Uint32 last_frame_time;
+  TTF_Font *default_font;
+  TTF_Font *custom_font;
+  PageManager page_manager;
+  FileDropCallback file_drop_callback;
+
+  // New state tracking
+  int window_width, window_height;
+  int mouse_x, mouse_y;
+  int mouse_buttons[8];
+  int last_mouse_buttons[8];
+  int keyboard_state[512];
+  int last_keyboard_state[512];
+  UIElement *mouse_pressed_element;
+  int mouse_pressed_button;
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
 } SXUI_Engine;
 
 static SXUI_Engine engine;
 static int GLOBAL_CONN_ID = 0;
 
+<<<<<<< HEAD
 TTF_Font* _get_active_font() {
     if (engine.custom_font) return engine.custom_font;
     return engine.default_font;
+=======
+static void sxui_get_abs_pos(UIElement *el, int *x, int *y);
+
+static TTF_Font *_get_active_font() {
+  if (engine.custom_font)
+    return engine.custom_font;
+  return engine.default_font;
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
 }
 
 Uint32 rgba_to_uint(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
@@ -420,10 +479,71 @@ void disconnect_binding(UIConnection conn) {
     }
 }
 
+<<<<<<< HEAD
 void trigger_click(UIButton* btn) {
     for (size_t i = 0; i < list_length(btn->onClick); i++) {
         BoundCallback* bc = (BoundCallback*)list_get(btn->onClick, i);
         ((ClickCallback)bc->callback)(btn);
+=======
+void trigger_click(UIButton *btn) {
+  if (btn && btn->onClick) {
+    for (size_t i = 0; i < list_length(btn->onClick); i++) {
+      BoundCallback *bc = list_get(btn->onClick, i);
+      ((ClickCallback)bc->callback)(btn);
+    }
+  }
+}
+
+void trigger_mouse_click(UIElement *el, int button) {
+  if (el && el->onMouseClick) {
+    for (size_t i = 0; i < list_length(el->onMouseClick); i++) {
+      BoundCallback *bc = list_get(el->onMouseClick, i);
+      ((void (*)(UIElement *, int))bc->callback)(el, button);
+    }
+  }
+}
+void trigger_focus(UITextInput *input, int focused) {
+  for (size_t i = 0; i < list_length(input->onFocusChanged); i++) {
+    BoundCallback *bc = (BoundCallback *)list_get(input->onFocusChanged, i);
+    ((FocusCallback)bc->callback)(input, focused);
+  }
+}
+
+void trigger_hover(UIElement *elem, int hovered) {
+  list *l = hovered ? elem->onMouseEnter : elem->onMouseLeave;
+  for (size_t i = 0; i < list_length(l); i++) {
+    BoundCallback *bc = (BoundCallback *)list_get(l, i);
+    ((HoverCallback)bc->callback)(elem, hovered);
+  }
+}
+
+void trigger_text_changed(UITextInput *input) {
+  for (size_t i = 0; i < list_length(input->onTextChanged); i++) {
+    BoundCallback *bc = (BoundCallback *)list_get(input->onTextChanged, i);
+    ((TextCallback)bc->callback)(input, input->text);
+  }
+}
+
+void trigger_submit(UITextInput *input) {
+  for (size_t i = 0; i < list_length(input->onSubmit); i++) {
+    BoundCallback *bc = (BoundCallback *)list_get(input->onSubmit, i);
+    ((TextCallback)bc->callback)(input, input->text);
+  }
+}
+
+void trigger_value_changed(void *element, float value) {
+  list *handlers = NULL;
+  if (((UIElement *)element)->type == UI_SLIDER) {
+    handlers = ((UISlider *)element)->onValueChanged;
+  } else if (((UIElement *)element)->type == UI_CHECKBOX) {
+    handlers = ((UICheckBox *)element)->onValueChanged;
+  }
+
+  if (handlers) {
+    for (size_t i = 0; i < list_length(handlers); i++) {
+      BoundCallback *bc = (BoundCallback *)list_get(handlers, i);
+      ((ValueCallback)bc->callback)(element, value);
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
     }
 }
 
@@ -661,12 +781,87 @@ void read_input(UITextInput* input, SDL_Event* event) {
         }
     }
 
+<<<<<<< HEAD
     int cw = input->el.w - 10;
     int is_pass = (input->el.flags & UI_FLAG_PASSWORD);
     
     int cx;
     if (is_pass) {
         cx = input->cursorPosition * _measure_text("*");
+=======
+  int cw = input->el.w - 10;
+  int is_pass = (input->el.flags & UI_FLAG_PASSWORD);
+
+  int cx;
+  if (is_pass) {
+    cx = input->cursorPosition * _measure_text("*");
+  } else {
+    cx = _measure_text_len(input->text, input->cursorPosition);
+  }
+
+  int rel_cx = cx - input->scrollOffset;
+
+  if (rel_cx < 0) {
+    input->scrollOffset = cx;
+  } else if (rel_cx > cw) {
+    input->scrollOffset = cx - cw;
+  }
+
+  int total_w;
+  if (is_pass) {
+    total_w = input->len * _measure_text("*");
+  } else {
+    total_w = _measure_text(input->text);
+  }
+
+  if (total_w < cw)
+    input->scrollOffset = 0;
+  else if (input->scrollOffset > total_w - cw)
+    input->scrollOffset = total_w - cw;
+  if (input->scrollOffset < 0)
+    input->scrollOffset = 0;
+}
+
+void sx_update_layout(UIFrame *f) {
+  if (!(f->el.flags &
+        (UI_LAYOUT_VERTICAL | UI_LAYOUT_HORIZONTAL | UI_LAYOUT_GRID))) {
+    return;
+  }
+  int cx = f->padding, cy = f->padding;
+  int max_row_h = 0;
+  int col_count = 0;
+
+  for (size_t i = 0; i < list_length(f->el.children); i++) {
+    UIElement *c = list_get(f->el.children, i);
+    if (c->flags & UI_FLAG_HIDDEN)
+      continue;
+
+    if (c->w == 0)
+      c->w = (f->el.target_w > 0) ? f->el.target_w : 100;
+    if (c->h == 0)
+      c->h = (f->el.target_h > 0) ? f->el.target_h : 30;
+
+    if (f->el.flags & UI_LAYOUT_GRID) {
+      if (cx + c->w + f->padding > f->el.w ||
+          (f->max_grid_cols > 0 && col_count >= f->max_grid_cols)) {
+        cx = f->padding;
+        cy += max_row_h + f->spacing;
+        max_row_h = 0;
+        col_count = 0;
+      }
+      c->x = cx;
+      c->y = cy;
+      cx += c->w + f->spacing;
+      if (c->h > max_row_h)
+        max_row_h = c->h;
+      col_count++;
+    } else if (f->el.flags & UI_LAYOUT_HORIZONTAL) {
+      c->x = cx;
+      c->y = cy;
+      cx += c->w + f->spacing;
+      if (c->h > max_row_h)
+        max_row_h = c->h;
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
     } else {
         cx = _measure_text_len(input->text, input->cursorPosition);
     }
@@ -827,6 +1022,7 @@ void _add_to_parent(UIElement* p, UIElement* c) {
     }
 }
 
+<<<<<<< HEAD
 void sxui_init(const char* title, int w, int h, Uint32 seed) {
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
@@ -860,6 +1056,93 @@ int sxui_load_font(const char* path, int size) {
     }
     engine.custom_font = TTF_OpenFont(path, size);
     return (engine.custom_font != NULL);
+=======
+void init_base(UIElement *el, int x, int y, int w, int h, UIType t) {
+  el->x = x;
+  el->y = y;
+  el->w = w;
+  el->h = h;
+  el->type = t;
+  engine.last_created = el;
+  el->flags = UI_FLAG_NONE;
+  el->parent = NULL;
+  el->children = list_new();
+  el->_is_hovered = 0;
+  el->_is_hovered_prev = 0;
+  el->_is_dragging = 0;
+  el->z_index = 0;
+  el->creation_time = SDL_GetTicks();
+  el->transparency = 1.0f;
+  el->custom_color = SX_COLOR_NONE;
+  el->has_custom_color = 0;
+  el->onMouseEnter = list_new();
+  el->onMouseLeave = list_new();
+  el->onMouseClick = list_new();
+
+  el->effects.gradient.enabled = 0;
+  el->effects.gradient.stops = NULL;
+  el->effects.gradient.angle = 90.0f;
+  el->effects.outline.enabled = 0;
+  el->effects.outline.width = 1;
+  el->effects.outline.color = SX_COLOR_BLACK;
+  el->effects.outline.alpha = 255;
+  el->effects.rounded.enabled = 0;
+  el->effects.rounded.radius = 0;
+  engine.last_created = el;
+}
+
+void _add_to_parent(UIElement *p, UIElement *c) {
+  if (p) {
+    c->parent = p;
+    list_add(p->children, c);
+    if (p->type == UI_FRAME)
+      sx_update_layout((UIFrame *)p);
+  } else {
+    list_add(engine.root, c);
+  }
+}
+
+void sxui_init(const char *title, int w, int h, Uint32 seed) {
+  SDL_Init(SDL_INIT_VIDEO);
+  TTF_Init();
+
+  engine.window =
+      SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                       w, h, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+  engine.window_width = w;
+  engine.window_height = h;
+
+  if (engine.window == NULL) {
+    // Handle error, e.g., print to stderr and exit
+  }
+  engine.renderer = SDL_CreateRenderer(
+      engine.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+  SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+
+  engine.default_font = TTF_OpenFont("fonts/Montserrat-Regular.ttf", 16);
+  if (!engine.default_font) {
+    printf("Warning: Could not load fallback font Montserrat.\n");
+  }
+  engine.custom_font = NULL;
+
+  engine.root = list_new();
+  engine.theme = sx_generate_palette(seed, THEME_DARK);
+  engine.running = 1;
+  engine.focused = NULL;
+  engine.dragging_el = NULL;
+  engine.page_manager.pages = NULL;
+  engine.page_manager.current_page = -1;
+  engine.page_manager.initialized = 0;
+  engine.file_drop_callback = NULL;
+}
+
+int sxui_load_font(const char *path, int size) {
+  if (engine.custom_font) {
+    TTF_CloseFont(engine.custom_font);
+  }
+  engine.custom_font = TTF_OpenFont(path, size);
+  return (engine.custom_font != NULL);
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
 }
 
 void sxui_set_theme(Uint32 seed, UIThemeMode mode) {
@@ -900,6 +1183,7 @@ int sxui_should_quit(void) {
 }
 
 void sxui_poll_events(void) {
+<<<<<<< HEAD
     SDL_Event e;
     int mx, my;
     SDL_GetMouseState(&mx, &my);
@@ -915,6 +1199,126 @@ void sxui_poll_events(void) {
             
             if (engine.file_drop_callback) {
                 engine.file_drop_callback(hit, dropped_file);
+=======
+  SDL_Event e;
+  int mx, my;
+  SDL_GetMouseState(&mx, &my);
+  engine.mouse_x = mx;
+  engine.mouse_y = my;
+
+  // Sync previous states
+  memcpy(engine.last_mouse_buttons, engine.mouse_buttons,
+         sizeof(engine.mouse_buttons));
+  memcpy(engine.last_keyboard_state, engine.keyboard_state,
+         sizeof(engine.keyboard_state));
+
+  while (SDL_PollEvent(&e)) {
+    if (e.type == SDL_QUIT) {
+      engine.running = 0;
+    }
+
+    if (e.type == SDL_WINDOWEVENT) {
+      if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+        engine.window_width = e.window.data1;
+        engine.window_height = e.window.data2;
+      }
+    }
+
+    if (e.type == SDL_KEYDOWN) {
+      if (e.key.keysym.scancode < 512) {
+        engine.keyboard_state[e.key.keysym.scancode] = 1;
+      }
+    }
+    if (e.type == SDL_KEYUP) {
+      if (e.key.keysym.scancode < 512) {
+        engine.keyboard_state[e.key.keysym.scancode] = 0;
+      }
+    }
+
+    if (e.type == SDL_DROPFILE) {
+      char *dropped_file = e.drop.file;
+      UIElement *hit = _get_hit(engine.root, mx, my, 0, 0);
+
+      if (engine.file_drop_callback) {
+        engine.file_drop_callback(hit, dropped_file);
+      }
+
+      SDL_free(dropped_file);
+    }
+
+    if (e.type == SDL_MOUSEBUTTONDOWN) {
+      int btn_idx =
+          e.button.button -
+          1; // Internal indexing: 0 for left, 1 for middle, 2 for right
+      if (btn_idx >= 0 && btn_idx < 8) {
+        engine.mouse_buttons[btn_idx] = 1;
+      }
+
+      UIElement *hit = _get_hit(engine.root, mx, my, 0, 0);
+
+      // Special case: check focused dropdown first to handle popups outside
+      // parent bounds
+      if (!hit && engine.focused && engine.focused->type == UI_DROPDOWN) {
+        UIDropdown *dd = (UIDropdown *)engine.focused;
+        if (dd->is_open) {
+          int wx, wy;
+          sxui_get_abs_pos(engine.focused, &wx, &wy);
+          int dropdown_h = 30 + (dd->option_count * 30);
+          if (mx >= wx && mx <= wx + engine.focused->w && my >= wy &&
+              my <= wy + dropdown_h) {
+            hit = engine.focused;
+          }
+        }
+      }
+
+      engine.mouse_pressed_element = hit;
+      engine.mouse_pressed_button = e.button.button;
+
+      if (engine.focused && engine.focused != hit) {
+        if (engine.focused->type == UI_INPUT) {
+          trigger_focus((UITextInput *)engine.focused, 0);
+          SDL_StopTextInput();
+        }
+        if (engine.focused->type == UI_DROPDOWN) {
+          ((UIDropdown *)engine.focused)->is_open = 0;
+        }
+        engine.focused = NULL;
+      }
+
+      if (hit) {
+        if (hit->flags & UI_FLAG_DRAGGABLE) {
+          engine.dragging_el = hit;
+          engine.drag_off_x = mx - hit->x;
+          engine.drag_off_y = my - hit->y;
+        }
+
+        if (hit->type == UI_BUTTON) {
+          UIButton *b = (UIButton *)hit;
+          b->_pressed = 1;
+          b->_lastClickTime = SDL_GetTicks();
+          trigger_click(b);
+        } else if (hit->type == UI_CHECKBOX) {
+          UICheckBox *cb = (UICheckBox *)hit;
+          cb->value = !cb->value;
+          trigger_value_changed(cb, (float)cb->value);
+        } else if (hit->type == UI_SLIDER) {
+          engine.focused = hit;
+        } else if (hit->type == UI_DROPDOWN) {
+          UIDropdown *dd = (UIDropdown *)hit;
+          int wx, wy;
+          sxui_get_abs_pos(hit, &wx, &wy);
+          int header_h = 30;
+
+          if (my < wy + header_h) {
+            dd->is_open = !dd->is_open;
+            engine.focused = (UIElement *)dd;
+          } else if (dd->is_open) {
+            int item_idx = (my - (wy + header_h)) / 30;
+            if (item_idx >= 0 && item_idx < dd->option_count) {
+              dd->selected_index = item_idx;
+              dd->is_open = 0;
+              trigger_dropdown_changed(dd, item_idx, dd->options[item_idx]);
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
             }
             
             SDL_free(dropped_file);
@@ -1005,6 +1409,7 @@ void sxui_poll_events(void) {
                 engine.focused = NULL;
             }
         }
+<<<<<<< HEAD
         
         if (e.type == SDL_MOUSEBUTTONUP) {
             if (engine.dragging_el) {
@@ -1013,6 +1418,14 @@ void sxui_poll_events(void) {
             if (engine.focused && engine.focused->type == UI_SLIDER) {
                 engine.focused = NULL;
             }
+=======
+      }
+
+      if (!hit && engine.focused) { // Clicked outside focused element
+        if (engine.focused->type == UI_INPUT) {
+          trigger_focus((UITextInput *)engine.focused, 0);
+          SDL_StopTextInput();
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
         }
         
         if (e.type == SDL_MOUSEWHEEL) {
@@ -1031,10 +1444,49 @@ void sxui_poll_events(void) {
             }
         }
 
+<<<<<<< HEAD
         if (engine.focused && engine.focused->type == UI_INPUT) {
             if (e.type == SDL_TEXTINPUT || e.type == SDL_KEYDOWN) {
                 read_input((UITextInput*)engine.focused, &e);
             }
+=======
+    if (e.type == SDL_MOUSEBUTTONUP) {
+      int btn_idx = e.button.button - 1;
+      if (btn_idx >= 0 && btn_idx < 8) {
+        engine.mouse_buttons[btn_idx] = 0;
+      }
+
+      UIElement *hit = _get_hit(engine.root, mx, my, 0, 0);
+      if (hit == engine.mouse_pressed_element &&
+          e.button.button == engine.mouse_pressed_button &&
+          engine.dragging_el == NULL) {
+        trigger_mouse_click(hit, e.button.button);
+      }
+      engine.mouse_pressed_element = NULL;
+      engine.mouse_pressed_button = 0;
+
+      if (engine.dragging_el) {
+        engine.dragging_el = NULL;
+      }
+      if (engine.focused && engine.focused->type == UI_SLIDER) {
+        engine.focused = NULL;
+      }
+    }
+
+    if (e.type == SDL_MOUSEWHEEL) {
+      UIElement *hit = _get_hit(engine.root, mx, my, 0, 0);
+      while (hit) {
+        if (hit->type == UI_FRAME && (hit->flags & UI_SCROLLABLE)) {
+          UIFrame *f = (UIFrame *)hit;
+          f->scroll_y -= e.wheel.y * 40;
+          if (f->scroll_y < 0)
+            f->scroll_y = 0;
+          int limit = f->content_height - hit->h;
+          if (f->scroll_y > limit && limit > 0)
+            f->scroll_y = limit;
+          f->last_scroll_time = SDL_GetTicks();
+          break;
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
         }
     }
 
@@ -1043,6 +1495,7 @@ void sxui_poll_events(void) {
         engine.dragging_el->y = my - engine.drag_off_y;
     }
 
+<<<<<<< HEAD
     if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) {
         if (engine.focused && engine.focused->type == UI_SLIDER) {
             UISlider* s = (UISlider*)engine.focused;
@@ -1062,6 +1515,22 @@ void sxui_poll_events(void) {
             if (fabs(s->value - old_val) > 0.001f) {
                 trigger_value_changed(s, s->value);
             }
+=======
+  if (engine.dragging_el) {
+    engine.dragging_el->x = mx - engine.drag_off_x;
+    engine.dragging_el->y = my - engine.drag_off_y;
+  }
+
+  if (sxui_is_mouse_button_down(SDL_BUTTON_LEFT)) { // Use new public function
+    if (engine.focused && engine.focused->type == UI_SLIDER) {
+      UISlider *s = (UISlider *)engine.focused;
+      int wx = s->el.x;
+      UIElement *p = s->el.parent;
+      while (p) {
+        wx += p->x;
+        if (p->type == UI_FRAME) {
+          wx -= ((UIFrame *)p)->scroll_y;
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
         }
     }
 }
@@ -1125,6 +1594,7 @@ UIElement* sxui_slider(UIElement* p, float initial) {
     return (UIElement*)s;
 }
 
+<<<<<<< HEAD
 UIElement* sxui_dropdown(UIElement* parent, const char** options, int option_count, int default_index) {
     UIDropdown* dd = calloc(1, sizeof(UIDropdown));
     init_base(&dd->el, 0, 0, 0, 0, UI_DROPDOWN);
@@ -1133,6 +1603,57 @@ UIElement* sxui_dropdown(UIElement* parent, const char** options, int option_cou
     dd->options = malloc(sizeof(char*) * option_count);
     for (int i = 0; i < option_count; i++) {
         dd->options[i] = strdup(options[i]);
+=======
+UIElement *sxui_dropdown(UIElement *parent, const char **options,
+                         int option_count, int default_index) {
+  UIDropdown *dd = calloc(1, sizeof(UIDropdown));
+  init_base(&dd->el, 0, 0, 0, 0, UI_DROPDOWN);
+
+  dd->option_count = option_count;
+  dd->options = malloc(sizeof(char *) * option_count);
+  for (int i = 0; i < option_count; i++) {
+    dd->options[i] = strdup(options[i]);
+  }
+  dd->selected_index =
+      (default_index >= 0 && default_index < option_count) ? default_index : 0;
+  dd->is_open = 0;
+  dd->el.z_index = DROPDOWN_Z_INDEX;
+  dd->onSelectionChanged = list_new();
+
+  _add_to_parent(parent, (UIElement *)dd);
+  return (UIElement *)dd;
+}
+
+UIElement *sxui_canvas(UIElement *parent, int x, int y, int w, int h) {
+  UICanvas *c = calloc(1, sizeof(UICanvas));
+  init_base(&c->el, x, y, w, h, UI_CANVAS);
+
+  c->texture = SDL_CreateTexture(engine.renderer, SDL_PIXELFORMAT_RGBA8888,
+                                 SDL_TEXTUREACCESS_STREAMING, w, h);
+  c->pixels = calloc(w * h, sizeof(Uint32));
+  c->pitch = w * sizeof(Uint32);
+
+  _add_to_parent(parent, (UIElement *)c);
+  return (UIElement *)c;
+}
+
+void _delete_element_recursive(UIElement *el) {
+  if (!el)
+    return;
+
+  for (size_t i = 0; i < list_length(el->children); i++) {
+    _delete_element_recursive(list_get(el->children, i));
+  }
+
+  list_free(el->children);
+  list_free(el->onMouseEnter);
+  list_free(el->onMouseLeave);
+  list_free(el->onMouseClick); // Free the new list
+
+  if (el->effects.gradient.stops) {
+    for (size_t i = 0; i < list_length(el->effects.gradient.stops); i++) {
+      free(list_get(el->effects.gradient.stops, i));
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
     }
     dd->selected_index = (default_index >= 0 && default_index < option_count) ? default_index : 0;
     dd->is_open = 0;
@@ -1156,9 +1677,187 @@ UIElement* sxui_canvas(UIElement* parent, int x, int y, int w, int h) {
     return (UIElement*)c;
 }
 
+<<<<<<< HEAD
 void _delete_element_recursive(UIElement* el) {
     if (!el) return;
     
+=======
+void sxui_delete(UIElement *element) {
+  if (!element)
+    return;
+
+  if (element == engine.focused) {
+    engine.focused = NULL;
+  }
+  if (element == engine.dragging_el) {
+    engine.dragging_el = NULL;
+  }
+
+  if (element->parent) {
+    list_remove(element->parent->children, element);
+    if (element->parent->type == UI_FRAME) {
+      sx_update_layout((UIFrame *)element->parent);
+    }
+  } else {
+    list_remove(engine.root, element);
+  }
+
+  _delete_element_recursive(element);
+}
+
+void sxui_set_position(UIElement *el, int x, int y) {
+  if (el) {
+    el->x = x;
+    el->y = y;
+  }
+}
+
+void sxui_set_size(UIElement *el, int w, int h) {
+  if (el) {
+    el->w = w;
+    el->h = h;
+
+    if (el->type == UI_CANVAS) {
+      UICanvas *c = (UICanvas *)el;
+      if (c->texture)
+        SDL_DestroyTexture(c->texture);
+      if (c->pixels)
+        free(c->pixels);
+
+      c->texture = SDL_CreateTexture(engine.renderer, SDL_PIXELFORMAT_RGBA8888,
+                                     SDL_TEXTUREACCESS_STREAMING, w, h);
+      c->pixels = calloc(w * h, sizeof(Uint32));
+      c->pitch = w * sizeof(Uint32);
+    }
+  }
+}
+
+static void sxui_get_abs_pos(UIElement *el, int *x, int *y) {
+  if (!el)
+    return;
+  int wx = el->x;
+  int wy = el->y;
+  UIElement *p = el->parent;
+  while (p) {
+    wx += p->x;
+    wy += p->y;
+    if (p->type == UI_FRAME) {
+      wy -= ((UIFrame *)p)->scroll_y;
+    }
+    p = p->parent;
+  }
+  if (x)
+    *x = wx;
+  if (y)
+    *y = wy;
+}
+
+// --- Utility Getters ---
+
+int sxui_get_width(UIElement *el) { return el ? el->w : 0; }
+int sxui_get_height(UIElement *el) { return el ? el->h : 0; }
+
+void sxui_get_mouse_pos(int *x, int *y) {
+  if (x)
+    *x = engine.mouse_x;
+  if (y)
+    *y = engine.mouse_y;
+}
+
+int sxui_get_mouse_x(void) { return engine.mouse_x; }
+int sxui_get_mouse_y(void) { return engine.mouse_y; }
+
+int sxui_is_mouse_button_down(int button) {
+  // SDL_BUTTON_LEFT is 1, SDL_BUTTON_RIGHT is 3, etc.
+  // Our internal array is 0-indexed.
+  int btn_idx = button - 1;
+  if (btn_idx >= 0 && btn_idx < 8)
+    return engine.mouse_buttons[btn_idx];
+  return 0;
+}
+
+int sxui_is_mouse_button_up(int button) {
+  // SDL_BUTTON_LEFT is 1, SDL_BUTTON_RIGHT is 3, etc.
+  // Our internal array is 0-indexed.
+  int btn_idx = button - 1;
+  if (btn_idx >= 0 && btn_idx < 8)
+    return !engine.mouse_buttons[btn_idx];
+  return 0;
+}
+
+int sxui_is_mouse_button_pressed(int button) {
+  // SDL_BUTTON_LEFT is 1, SDL_BUTTON_RIGHT is 3, etc.
+  // Our internal array is 0-indexed.
+  int btn_idx = button - 1;
+  if (btn_idx >= 0 && btn_idx < 8)
+    return engine.mouse_buttons[btn_idx] && !engine.last_mouse_buttons[btn_idx];
+  return 0;
+}
+
+int sxui_is_mouse_button_released(int button) {
+  // SDL_BUTTON_LEFT is 1, SDL_BUTTON_RIGHT is 3, etc.
+  // Our internal array is 0-indexed.
+  int btn_idx = button - 1;
+  if (btn_idx >= 0 && btn_idx < 8)
+    return !engine.mouse_buttons[btn_idx] && engine.last_mouse_buttons[btn_idx];
+  return 0;
+}
+
+int sxui_is_key_down(int scancode) {
+  if (scancode >= 0 && scancode < 512)
+    return engine.keyboard_state[scancode];
+  return 0;
+}
+
+int sxui_is_key_pressed(int scancode) {
+  if (scancode >= 0 && scancode < 512)
+    return engine.keyboard_state[scancode] &&
+           !engine.last_keyboard_state[scancode];
+  return 0;
+}
+
+int sxui_is_key_released(int scancode) {
+  if (scancode >= 0 && scancode < 512)
+    return !engine.keyboard_state[scancode] &&
+           engine.last_keyboard_state[scancode];
+  return 0;
+}
+
+void sxui_get_window_size(int *w, int *h) {
+  if (w)
+    *w = engine.window_width;
+  if (h)
+    *h = engine.window_height;
+}
+
+int sxui_get_window_width(void) { return engine.window_width; }
+int sxui_get_window_height(void) { return engine.window_height; }
+
+void sxui_quit(void) { engine.running = 0; }
+
+// --- Event Binding ---
+
+UIConnection sxui_on_mouse_click(UIElement *el, MouseClickCallback cb) {
+  if (el && cb)
+    return bind_event(el->onMouseClick, cb);
+  UIConnection empty = {0, NULL};
+  return empty;
+}
+
+const char *sxui_get_scancode_name(int scancode) {
+  return SDL_GetScancodeName((SDL_Scancode)scancode);
+}
+
+// --- Element Properties ---
+
+void sxui_set_visible(UIElement *el, int visible) {
+  if (el) {
+    if (visible)
+      el->flags &= ~UI_FLAG_HIDDEN;
+    else
+      el->flags |= UI_FLAG_HIDDEN;
+
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
     for (size_t i = 0; i < list_length(el->children); i++) {
         _delete_element_recursive(list_get(el->children, i));
     }
@@ -1366,6 +2065,7 @@ int sxui_get_flags(UIElement* el) {
     return el ? el->flags : 0;
 }
 
+<<<<<<< HEAD
 void sxui_set_z_index(UIElement* el, int z) {
     if (el) el->z_index = z;
 }
@@ -1399,6 +2099,12 @@ const char* sxui_get_text(UIElement* el) {
     if (el->type == UI_LABEL) return ((UILabel*)el)->text;
     if (el->type == UI_INPUT) return ((UITextInput*)el)->text;
     if (el->type == UI_CHECKBOX) return ((UICheckBox*)el)->text;
+=======
+UIElement *sxui_get_last_element(void) { return engine.last_created; }
+
+const char *sxui_get_text(UIElement *el) {
+  if (!el)
+>>>>>>> 410878f (feat: Add new pages and enhance input handling)
     return NULL;
 }
 

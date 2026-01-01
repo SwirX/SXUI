@@ -13,6 +13,8 @@ A high-level, plug-and-play UI library for C built on SDL2. SXUI provides a simp
 - **Text Inputs**: Full editing suite including selection, copy/paste, and word navigation.
 - **Checkboxes**: State-based toggles with value callbacks.
 - **Sliders**: Normalized value selection (0.0 - 1.0).
+- **Dropdowns**: Expanded selection menus with custom callbacks.
+- **Canvas**: Low-level drawing surface for custom animations and tools.
 - **Frames**: Container elements with automated layout management.
 
 ### Layout Engine
@@ -21,6 +23,12 @@ A high-level, plug-and-play UI library for C built on SDL2. SXUI provides a simp
 - **Grid Layout**: Auto-wrapping grid with configurable column limits.
 - **Scrollable Containers**: Clipping support with automated, fading scrollbars.
 - **Dynamic Switching**: Change layout modes at runtime without recreating elements.
+
+### Advanced Input System
+
+- **Strict Mouse Logic**: `sxui_on_mouse_click` ensures clicks only fire if pressed and released on the same widget.
+- **Real-time Access**: Check `sxui_is_key_down` or `sxui_is_mouse_button_pressed` anywhere in your code.
+- **Window Utilities**: Built-in support for window resizing events and resolution getters.
 
 ### Text Editing Support
 

@@ -30,6 +30,8 @@ UIElement* lbl = sxui_label(parent, "Text");
 UIElement* inp = sxui_input(parent, "Placeholder", 0); // 1 for password
 UIElement* chk = sxui_checkbox(parent, "Label");
 UIElement* sld = sxui_slider(parent, 0.5f); // Range 0.0 - 1.0
+UIElement* dd  = sxui_dropdown(parent, options_arr, count, default_idx);
+UIElement* cnv = sxui_canvas(parent, x, y, w, h);
 UIElement* frm = sxui_frame(parent, x, y, w, h, flags);
 
 ```
@@ -55,7 +57,33 @@ sxui_set_visible(el, 1);    // 1=Show, 0=Hide
 sxui_set_text(el, "String");
 const char* txt = sxui_get_text(el);
 sxui_set_value(el, 0.75f);  // For sliders/checkboxes
+int w = sxui_get_width(el);
+int h = sxui_get_height(el);
 
+```
+
+### Input System
+
+```c
+// Mouse state
+int mx, my;
+sxui_get_mouse_pos(&mx, &my);
+int is_down = sxui_is_mouse_button_down(SX_MOUSE_LEFT);
+int pressed = sxui_is_mouse_button_pressed(SX_MOUSE_RIGHT);
+
+// Keyboard state
+int space_down = sxui_is_key_down(SX_KEY_SPACE);
+int esc_pressed = sxui_is_key_pressed(SX_KEY_ESCAPE);
+const char* name = sxui_get_scancode_name(SX_KEY_ENTER);
+
+```
+
+### System Utilities
+
+```c
+sxui_quit(); // Set running flag to 0
+int ww = sxui_get_window_width();
+int wh = sxui_get_window_height();
 ```
 
 ### Frame & Layout
@@ -88,9 +116,11 @@ sxui_disconnect(c1);
 
 ```c
 void on_click(void* el);
+void on_mouse_click(void* el, int button); // SDL_BUTTON_* or SX_MOUSE_*
 void on_hover(void* el, int hovered);
 void on_text(void* el, const char* text);
 void on_value(void* el, float value);
+void on_dropdown(void* el, int index, const char* value);
 
 ```
 
